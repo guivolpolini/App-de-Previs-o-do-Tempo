@@ -1,152 +1,50 @@
-const apiKey = "40efbaa58a0a19ff3aed9217d6f4c723"
+const apiKey = "40efbaa58a0a19ff3aed9217d6f4c723";
 
-async function getWeather(){
+async function buscarClima(){
 
-const city = document.getElementById("cityInput").value
+    const cidade = document.getElementById("cidade").value;
 
-const url =
-`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=pt_br`
+    const urlAtual = `https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${apiKey}&units=metric&lang=pt_br`;
+    const urlPrevisao = `https://api.openweathermap.org/data/2.5/forecast?q=${cidade}&appid=${apiKey}&units=metric&lang=pt_br`;
 
-const response = await fetch(url)
+    const respostaAtual = await fetch(urlAtual);
+    const dadosAtual = await respostaAtual.json();
 
-const data = await response.json()
+    const respostaPrevisao = await fetch(urlPrevisao);
+    const dadosPrevisao = await respostaPrevisao.json();
 
-showWeather(data)
-
-getForecast(city)
-
+    mostrarClimaAtual(dadosAtual);
+    mostrarPrevisao(dadosPrevisao);
 }
 
-function showWeather(data){
+function mostrarClimaAtual(dados){
 
-document.getElementById("city").innerText = data.name
-
-document.getElementById("temp").innerText =
-Math.round(data.main.temp)+"°C"
-
-document.getElementById("description").innerText =
-data.weather[0].description
-
-document.getElementById("icon").src =
-`https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`
-
-climateMessage(data.main.temp)
-
-changeBackground(data.weather[0].main.toLowerCase())
-
+    document.getElementById("climaAtual").innerHTML = `
+        <h3>${dados.name}</h3>
+        <p>🌡️ ${dados.main.temp}°C</p>
+        <p>${dados.weather[0].description}</p>
+        <img src="https://openweathermap.org/img/wn/${dados.weather[0].icon}@2x.png">
+    `;
 }
 
-function climateMessage(temp){
+function mostrarPrevisao(dados){
 
-let msg=""
+    const previsao = document.getElementById("previsao5dias");
+    previsao.innerHTML = "";
 
-if(temp<10){
+    const dias = dados.list.filter(item => item.dt_txt.includes("12:00:00"));
 
-msg="❄️ Muito frio"
+    dias.slice(0,5).forEach(dia => {
 
+        const data = new Date(dia.dt_txt);
+        const diaSemana = data.toLocaleDateString("pt-BR",{weekday:"short"});
+
+        previsao.innerHTML += `
+            <div class="dia">
+                <p>${diaSemana}</p>
+                <img src="https://openweathermap.org/img/wn/${dia.weather[0].icon}.png">
+                <p>${Math.round(dia.main.temp)}°C</p>
+            </div>
+        `;
+    });
 }
-else if(temp<20){
-
-msg="🧥 Clima fresco"
-
-}
-else if(temp<30){
-
-msg="☀️ Clima agradável"
-
-}
-else{
-
-msg="🔥 Muito calor"
-
-}
-
-document.getElementById("message").innerText=msg
-
-}
-
-async function getForecast(city){
-
-const url =
-`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric&lang=pt_br`
-
-const response = await fetch(url)
-
-const data = await response.json()
-
-const forecastDiv = document.getElementById("forecast")
-
-forecastDiv.innerHTML=""
-
-for(let i=0;i<5;i++){
-
-const item = data.list[i*8]
-
-const date = new Date(item.dt_txt)
-.toLocaleDateString("pt-BR",{weekday:"short"})
-
-forecastDiv.innerHTML += `
-
-<div class="forecast-day">
-
-<p>${date}</p>
-
-<img src="https://openweathermap.org/img/wn/${item.weather[0].icon}.png">
-
-<p>${Math.round(item.main.temp)}°C</p>
-
-</div>
-
-`
-
-}
-
-}
-
-function changeBackground(weather){
-
-document.body.className=""
-
-if(weather.includes("rain")){
-
-document.body.classList.add("rain")
-
-}
-else if(weather.includes("cloud")){
-
-document.body.classList.add("cloud")
-
-}
-else if(weather.includes("clear")){
-
-document.body.classList.add("sunny")
-
-}
-
-}
-
-/* geolocalização automática */
-
-function getLocation(){
-
-navigator.geolocation.getCurrentPosition(async(position)=>{
-
-const lat = position.coords.latitude
-const lon = position.coords.longitude
-
-const url =
-`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=pt_br`
-
-const response = await fetch(url)
-
-const data = await response.json()
-
-showWeather(data)
-
-getForecast(data.name)
-
-})
-
-}
-
-window.onload = getLocation
